@@ -1,4 +1,4 @@
-> 本项目使用来自 https://github.com/overtrue/chinese-calendar,使用 `nesbot/carbon` 进行了对部分日期处理进行了重写，添加了中文日期阿拉伯数字日期转换的方法
+> 本项目来自 https://github.com/overtrue/chinese-calendar,使用 `nesbot/carbon` 对部分日期处理进行了重写，添加了中文日期与阿拉伯数字日期转换的方法
 # Chinese calendar
 
 :date: 中国农历（阴历）与阳历（公历）转换与查询工具
