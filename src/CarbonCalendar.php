@@ -220,10 +220,9 @@ class CarbonCalendar
      *
      * @var array
      */
-    protected $chineseToNumberDayAlias = array(
-        '〇' => 0,
+    protected $chineseToNumberAlias = [
         '零' => 0,
-        '初' => 0,
+        '〇' => 0,
         '一' => 1,
         '二' => 2,
         '三' => 3,
@@ -233,55 +232,14 @@ class CarbonCalendar
         '七' => 7,
         '八' => 8,
         '九' => 9,
-        '十' => 10,
-        '十一' => 11,
-        '十二' => 12,
-        '十三' => 13,
-        '十四' => 14,
-        '十五' => 15,
-        '十六' => 16,
-        '十七' => 17,
-        '十八' => 18,
-        '十九' => 19,
-        '二十' => 20,
-        '廿' => 20,
-        '二十一' => 21,
-        '二十二' => 22,
-        '二十三' => 23,
-        '二十四' => 24,
-        '二十五' => 25,
-        '二十六' => 26,
-        '二十七' => 27,
-        '二十八' => 28,
-        '二十九' => 29,
-        '三十' => 30,
-        '卅' => 30,
-        '三十一' => 31,
-    );
-
+    ];
 
     /**
-     * 月份中文转数字称呼速查表.
+     * 日期中文转数字称呼速查表.
      *
      * @var array
      */
-    protected $chineseToNumberMonthAlias = array(
-        '一' => 1,
-        '正' => 1,
-        '二' => 2,
-        '三' => 3,
-        '四' => 4,
-        '五' => 5,
-        '六' => 6,
-        '七' => 7,
-        '八' => 8,
-        '九' => 9,
-        '十' => 10,
-        '十一' => 11,
-        '腊' => 11,
-        '十二' => 12,
-        '冬' => 12,
-    );
+    protected $chineseToNumberDayAlias = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十', '二十一', '二十二', '二十三', '二十四', '二十五', '二十六', '二十七', '二十八', '二十九', '三十', '三十一'];
 
     /**
      * 传入阳历年月日获得详细的公历、农历信息.
@@ -289,15 +247,15 @@ class CarbonCalendar
      * @param int $year
      * @param int $month
      * @param int $day
-     * @param int $hour
+     * @param int|null $hour
      *
      * @return array
      */
-    public function solar($year, $month, $day, $hour = null)
+    public function solar(int $year, int $month, int $day, ?int $hour = null): array
     {
         $date = $this->makeDate("{$year}-{$month}-{$day}");
         $lunar = $this->solar2lunar($year, $month, $day, $hour);
-        $week = abs($date->format('w')); // 0 ~ 6 修正 星期七 为 星期日
+        $week = $date->dayOfWeek; // 0 ~ 6 修正 星期七 为 星期日
 
         return array_merge(
             $lunar,
@@ -308,9 +266,9 @@ class CarbonCalendar
                 'gregorian_hour' => !is_numeric($hour) || $hour < 0 || $hour > 23 ? null : sprintf('%02d', $hour),
                 'week_no' => $week, // 在周日时将会传回 0
                 'week_name' => '星期' . $this->weekdayAlias[$week],
-                'is_today' => 0 === $this->makeDate('now')->diff($date)->days,
+                'is_today' => $date->isToday(),
                 'constellation' => $this->toConstellation($month, $day),
-                'is_same_year' => $lunar['lunar_year'] == $year ?: false,
+                'is_same_year' => $lunar['lunar_year'] == $year || false,
             ]
         );
     }
@@ -322,11 +280,11 @@ class CarbonCalendar
      * @param int $month lunar month
      * @param int $day lunar day
      * @param bool $isLeapMonth lunar month is leap or not.[如果是农历闰月第四个参数赋值true即可]
-     * @param int $hour birth hour.[0~23]
+     * @param int|null $hour birth hour.[0~23]
      *
      * @return array
      */
-    public function lunar($year, $month, $day, $isLeapMonth = false, $hour = null)
+    public function lunar(int $year, int $month, int $day, bool $isLeapMonth = false, ?int $hour = null): array
     {
         $solar = $this->lunar2solar($year, $month, $day, $isLeapMonth);
 
@@ -340,7 +298,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function daysOfYear($year)
+    public function daysOfYear(int $year): int
     {
         $sum = 348;
 
@@ -358,7 +316,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function monthsOfYear($year)
+    public function monthsOfYear(int $year): int
     {
         return 0 < $this->leapMonth($year) ? 13 : 12;
     }
@@ -370,7 +328,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function leapMonth($year)
+    public function leapMonth(int $year): int
     {
         // 闰字编码 \u95f0
         return $this->lunars[$year - 1900] & 0xf;
@@ -383,7 +341,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function leapDays($year)
+    public function leapDays(int $year): int
     {
         if ($this->leapMonth($year)) {
             return ($this->lunars[$year - 1900] & 0x10000) ? 30 : 29;
@@ -400,7 +358,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function lunarDays($year, $month)
+    public function lunarDays(int $year, int $month): int
     {
         // 月份参数从 1 至 12，参数错误返回 -1
         if ($month > 12 || $month < 1) {
@@ -418,7 +376,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function solarDays($year, $month)
+    public function solarDays(int $year, int $month): int
     {
         // 若参数错误 返回-1
         if ($month > 12 || $month < 1) {
@@ -438,11 +396,11 @@ class CarbonCalendar
      * 农历年份转换为干支纪年.
      *
      * @param int $lunarYear
-     * @param null|int $termIndex
+     * @param int|null $termIndex
      *
      * @return string
      */
-    public function ganZhiYear($lunarYear, $termIndex = null)
+    public function ganZhiYear(int $lunarYear, ?int $termIndex = null): string
     {
         /**
          * 据维基百科干支词条：『在西历新年后，华夏新年或干支历新年之前，则续用上一年之干支』
@@ -467,7 +425,7 @@ class CarbonCalendar
      *
      * @return string
      */
-    public function toConstellation($gregorianMonth, $gregorianDay)
+    public function toConstellation(int $gregorianMonth, int $gregorianDay): string
     {
         $constellations = '魔羯水瓶双鱼白羊金牛双子巨蟹狮子处女天秤天蝎射手魔羯';
         $arr = [20, 19, 21, 21, 21, 22, 23, 23, 23, 23, 22, 22];
@@ -487,7 +445,7 @@ class CarbonCalendar
      *
      * @return string
      */
-    public function toGanZhi($offset)
+    public function toGanZhi(int $offset): string
     {
         return $this->gan[$offset % 10] . $this->zhi[$offset % 12];
     }
@@ -505,7 +463,7 @@ class CarbonCalendar
      *  $_24 = $this->getTerm(1987,3) ;// _24 = 4; 意即 1987 年 2 月 4 日立春
      * </pre>
      */
-    public function getTerm($year, $no)
+    public function getTerm(int $year, int $no): int
     {
         if ($year < 1900 || $year > 2100) {
             return -1;
@@ -526,7 +484,7 @@ class CarbonCalendar
         return substr($solarTermsOfYear[$group], $offset, $length);
     }
 
-    public function toChinaYear($year)
+    public function toChinaYear($year): string
     {
         if (!is_numeric($year)) {
             throw new InvalidArgumentException("错误的年份:{$year}");
@@ -547,7 +505,7 @@ class CarbonCalendar
      *
      * @return string
      */
-    public function toChinaMonth($month)
+    public function toChinaMonth(int $month): string
     {
         // 若参数错误 返回 -1
         if ($month > 12 || $month < 1) {
@@ -564,7 +522,7 @@ class CarbonCalendar
      *
      * @return string
      */
-    public function toChinaDay($day)
+    public function toChinaDay(int $day): string
     {
         switch ($day) {
             case 10:
@@ -584,11 +542,11 @@ class CarbonCalendar
      * 仅能大致转换, 精确划分生肖分界线是 “立春”.
      *
      * @param int $year
-     * @param null|int $termIndex
+     * @param int|null $termIndex
      *
      * @return string
      */
-    public function getAnimal($year, $termIndex = null)
+    public function getAnimal(int $year, ?int $termIndex = null): string
     {
         // 认为此逻辑不需要，详情参见 ganZhiYear 相关注释
         $adjust = null !== $termIndex && 3 > $termIndex ? 1 : 0;
@@ -605,7 +563,7 @@ class CarbonCalendar
      *
      * @return string
      */
-    protected function getColor($ganZhi)
+    protected function getColor($ganZhi): ?string
     {
         if (!$ganZhi) {
             return null;
@@ -627,7 +585,7 @@ class CarbonCalendar
      *
      * @return string
      */
-    protected function getWuXing($ganZhi)
+    protected function getWuXing($ganZhi): ?string
     {
         if (!$ganZhi) {
             return null;
@@ -652,21 +610,21 @@ class CarbonCalendar
      * @param int $year
      * @param int $month
      * @param int $day
-     * @param int $hour
+     * @param int|null $hour
      *
      * @return array
      */
-    public function solar2lunar($year, $month, $day, $hour = null)
+    public function solar2lunar(int $year, int $month, int $day, ?int $hour = null): array
     {
+        $date = $this->makeDate("{$year}-{$month}-{$day}");
         if (23 == $hour) {
             // 23点过后算子时，农历以子时为一天的起始
-            $date = $this->makeDate("{$year}-{$month}-{$day} +1day");
-        } else {
-            $date = $this->makeDate("{$year}-{$month}-{$day}");
+            $date = $date->addDay();
         }
 
-        list($year, $month, $day) = explode('-', $date->format('Y-n-j'));
-
+        $year = $date->year;
+        $month = $date->month;
+        $day = $date->day;
         // 参数区间1900.1.31~2100.12.31
         if ($year < 1900 || $year > 2100) {
             throw new InvalidArgumentException("不支持的年份:{$year}");
@@ -677,7 +635,7 @@ class CarbonCalendar
             throw new InvalidArgumentException("不支持的日期:{$year}-{$month}-{$day}");
         }
 
-        $offset = $this->dateDiff($date, '1900-01-31')->days;
+        $offset = $date->diffInDays('1900-01-31');
 
         for ($i = 1900; $i < 2101 && $offset > 0; ++$i) {
             $daysOfYear = $this->daysOfYear($i);
@@ -755,10 +713,10 @@ class CarbonCalendar
             $termIndex = $month * 2 - 1;
         }
 
-        $term = null !== $termIndex ? $this->solarTerm[$termIndex] : null;
+        $term = is_null($termIndex) ? null : $this->solarTerm[$termIndex];
 
         // 日柱 当月一日与 1900/1/1 相差天数
-        $dayCyclical = $this->dateDiff("{$year}-{$month}-01", '1900-01-01')->days + 10;
+        $dayCyclical = $date->diffInDays('1900-01-01') + 10;
         $dayCyclical += $day - 1;
         $ganZhiDay = $this->toGanZhi($dayCyclical);
 
@@ -804,7 +762,7 @@ class CarbonCalendar
      *
      * @return array|int
      */
-    public function lunar2solar($year, $month, $day, $isLeapMonth = false)
+    public function lunar2solar(int $year, int $month, int $day, bool $isLeapMonth = false)
     {
         // 参数区间 1900.1.3 1 ~2100.12.1
         $leapMonth = $this->leapMonth($year);
@@ -899,7 +857,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function diffInYears($lunar1, $lunar2, $absolute = true)
+    public function diffInYears(array $lunar1, array $lunar2, bool $absolute = true): int
     {
         $solar1 =
             $this->lunar2solar($lunar1['lunar_year'], $lunar1['lunar_month'], $lunar1['lunar_day'], $lunar1['is_leap']);
@@ -909,7 +867,7 @@ class CarbonCalendar
             $this->lunar2solar($lunar2['lunar_year'], $lunar2['lunar_month'], $lunar2['lunar_day'], $lunar2['is_leap']);
         $date2 = $this->makeDate("{$solar2['solar_year']}-{$solar2['solar_month']}-{$solar2['solar_day']}");
 
-        if ($date1 < $date2) {
+        if ($date1->lt($date2)) {
             $lessLunar = $lunar1;
             $greaterLunar = $lunar2;
             $changed = false;
@@ -942,7 +900,7 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function diffInMonths($lunar1, $lunar2, $absolute = true)
+    public function diffInMonths(array $lunar1, array $lunar2, bool $absolute = true): int
     {
         $solar1 =
             $this->lunar2solar($lunar1['lunar_year'], $lunar1['lunar_month'], $lunar1['lunar_day'], $lunar1['is_leap']);
@@ -952,7 +910,7 @@ class CarbonCalendar
             $this->lunar2solar($lunar2['lunar_year'], $lunar2['lunar_month'], $lunar2['lunar_day'], $lunar2['is_leap']);
         $date2 = $this->makeDate("{$solar2['solar_year']}-{$solar2['solar_month']}-{$solar2['solar_day']}");
 
-        if ($date1 < $date2) {
+        if ($date1->lt($date2)) {
             $lessLunar = $lunar1;
             $greaterLunar = $lunar2;
             $changed = false;
@@ -1001,14 +959,12 @@ class CarbonCalendar
      *
      * @return int
      */
-    public function diffInDays($lunar1, $lunar2, $absolute = true)
+    public function diffInDays(array $lunar1, array $lunar2, bool $absolute = true): int
     {
-        $solar1 =
-            $this->lunar2solar($lunar1['lunar_year'], $lunar1['lunar_month'], $lunar1['lunar_day'], $lunar1['is_leap']);
+        $solar1 = $this->lunar2solar($lunar1['lunar_year'], $lunar1['lunar_month'], $lunar1['lunar_day'], $lunar1['is_leap']);
         $date1 = $this->makeDate("{$solar1['solar_year']}-{$solar1['solar_month']}-{$solar1['solar_day']}");
 
-        $solar2 =
-            $this->lunar2solar($lunar2['lunar_year'], $lunar2['lunar_month'], $lunar2['lunar_day'], $lunar2['is_leap']);
+        $solar2 = $this->lunar2solar($lunar2['lunar_year'], $lunar2['lunar_month'], $lunar2['lunar_day'], $lunar2['is_leap']);
         $date2 = $this->makeDate("{$solar2['solar_year']}-{$solar2['solar_month']}-{$solar2['solar_day']}");
 
         return $date1->diff($date2, $absolute)->format('%r%a');
@@ -1023,7 +979,7 @@ class CarbonCalendar
      *
      * @return array
      */
-    public function addYears($lunar, $value = 1, $overFlow = true)
+    public function addYears(array $lunar, int $value = 1, bool $overFlow = true): array
     {
         $newYear = $lunar['lunar_year'] + $value;
         $newMonth = $lunar['lunar_month'];
@@ -1060,7 +1016,7 @@ class CarbonCalendar
      *
      * @return array
      */
-    public function subYears($lunar, $value = 1, $overFlow = true)
+    public function subYears(array $lunar, int $value = 1, bool $overFlow = true): array
     {
         return $this->addYears($lunar, -1 * $value, $overFlow);
     }
@@ -1074,7 +1030,7 @@ class CarbonCalendar
      *
      * @return array
      */
-    public function addMonths($lunar, $value = 1, $overFlow = true)
+    public function addMonths(array $lunar, int $value = 1, bool $overFlow = true): array
     {
         if (0 > $value) {
             return $this->subMonths($lunar, -1 * $value, $overFlow);
@@ -1132,7 +1088,7 @@ class CarbonCalendar
      *
      * @return array
      */
-    public function subMonths($lunar, $value = 1, $overFlow = true)
+    public function subMonths(array $lunar, int $value = 1, bool $overFlow = true): array
     {
         if (0 > $value) {
             return $this->addMonths($lunar, -1 * $value, $overFlow);
@@ -1191,7 +1147,7 @@ class CarbonCalendar
      *
      * @return array
      */
-    public function addDays($lunar, $value = 1)
+    public function addDays(array $lunar, int $value = 1): array
     {
         $solar =
             $this->lunar2solar($lunar['lunar_year'], $lunar['lunar_month'], $lunar['lunar_day'], $lunar['is_leap']);
@@ -1209,7 +1165,7 @@ class CarbonCalendar
      *
      * @return array
      */
-    public function subDays($lunar, $value = 1)
+    public function subDays(array $lunar, int $value = 1): array
     {
         return $this->addDays($lunar, -1 * $value);
     }
@@ -1220,12 +1176,11 @@ class CarbonCalendar
      * @param string $string
      * @param string $timezone
      *
-     * @return \DateTime
+     * @return Carbon
      */
-    protected function makeDate($string = 'now', $timezone = 'PRC')
+    protected function makeDate(string $string = 'now', string $timezone = 'PRC'): Carbon
     {
         return Carbon::parse($string, $timezone);
-//        return new DateTime($string, new DateTimeZone($timezone));
     }
 
     /**
@@ -1238,7 +1193,7 @@ class CarbonCalendar
      *
      * @see https://baike.baidu.com/item/%E6%97%B6%E6%9F%B1/6274024
      */
-    protected function ganZhiHour($hour, $ganZhiDay)
+    protected function ganZhiHour(int $hour, int $ganZhiDay): array
     {
         if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
             return [null, null, null];
@@ -1252,5 +1207,73 @@ class CarbonCalendar
             $this->zhi[$zhiHour] . '时',
             sprintf('%02d', $hour),
         ];
+    }
+
+    /**
+     * 中文日期转数字(公历)
+     * @param string $chineseDate
+     * @return string
+     */
+    public function chineseDateToDateString(string $chineseDate): string
+    {
+        [$year, $month, $day] = $this->chineseDateToNumber($chineseDate);
+        return Carbon::create($year, $month, $day)->toDateString();
+    }
+
+    /**
+     * 中文日期转数字(公历)
+     * @param string $chineseDate
+     * @return Carbon
+     */
+    public function chineseDateToCarbon(string $chineseDate): Carbon
+    {
+        [$year, $month, $day] = $this->chineseDateToNumber($chineseDate);
+        return Carbon::create($year, $month, $day);
+    }
+
+    /**
+     * 中文日期转数字(公历)
+     * @param string $chineseDate
+     * @return array
+     */
+    public function chineseDateToNumber(string $chineseDate): array
+    {
+        $pattern = "/(\w{4})年(\w{1,2})月(\w{1,2})日/u";
+        // 使用正则表达式进行匹配
+        preg_match($pattern, $chineseDate, $matches);
+
+        $year = str_replace(array_keys($this->chineseToNumberAlias), array_values($this->chineseToNumberAlias), $matches[1]);
+        $month = array_flip($this->monthAlias)[$matches[2]] + 1;
+        $day = array_flip($this->chineseToNumberDayAlias)[$matches[3]] + 1;
+        return [(int)$year, (int)$month, (int)$day];
+    }
+
+
+    /**
+     * 数字日期转中文(公历)
+     * @param string|DateTime|Carbon $date
+     * @return string
+     */
+    public function numberDateToChineseDate($date, int $zeroType = 0): string
+    {
+        if (is_string($date)) {
+            $date = $date->format('Y年m月d日');
+        } elseif ($date instanceof DateTime || $date instanceof Carbon) {
+            $date = $date->format('Y年m月d日');
+        } else {
+            throw new InvalidArgumentException("错误的日期:{$date}");
+        }
+        $pattern = "/(\d{4})年(\d{1,2})月(\d{1,2})日/u";
+        // 使用正则表达式进行匹配
+        preg_match($pattern, $date, $matches);
+        $numberAlias = $this->chineseToNumberAlias;
+        if ($zeroType == 1) {
+            unset($numberAlias['零']);
+        }
+        $year = str_replace(array_values($numberAlias), array_keys($numberAlias), $matches[1]);
+        $month = $this->monthAlias[$matches[2] - 1];
+        $day = $this->chineseToNumberDayAlias[$matches[3] - 1];
+
+        return "{$year}年{$month}月{$day}日";
     }
 }

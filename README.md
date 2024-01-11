@@ -1,3 +1,4 @@
+> 本项目使用来自 https://github.com/overtrue/chinese-calendar,使用 `nesbot/carbon` 进行了对部分日期处理进行了重写，添加了中文日期阿拉伯数字日期转换的方法
 # Chinese calendar
 
 :date: 中国农历（阴历）与阳历（公历）转换与查询工具
@@ -5,15 +6,15 @@
 # Installing
 
 ```shell
-$ composer require overtrue/chinese-calendar -vvv
+$ composer require trace/carbon-calendar
 ```
 
 # Usage
 
 ```php
-use Overtrue\ChineseCalendar\Calendar;
+use Trace\CarbonCalendar\CarbonCalendar;
 
-$calendar = new Calendar();
+$calendar = new CarbonCalendar();
 
 $result = $calendar->solar(2017, 5, 5); // 阳历
 $result = $calendar->lunar(2017, 4, 10); // 阴历
@@ -96,7 +97,7 @@ array (
 
 > 想知道如何从零开始构建 PHP 扩展包？
 >
-> 请关注我的实战课程，我会在此课程中分享一些扩展开发经验 —— [《PHP 扩展包实战教程 - 从入门到发布》](https://learnku.com/courses/creating-package)
+> 请关注实战课程 —— [《PHP 扩展包实战教程 - 从入门到发布》](https://learnku.com/courses/creating-package)
 
 # License
 
